@@ -1,0 +1,110 @@
+% example-advanced.tex
+% Advanced examples showing complex nested chiasms
+
+\documentclass{article}
+\usepackage{chiasm}
+\usepackage[margin=1in]{geometry}
+
+\title{Advanced Chiasm Examples}
+\author{Jeremy Lloyd Conlin}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Replacement Nesting Example}
+
+Notice how the nested chiasm ``replaces'' the D level:
+
+\begin{chiasm}
+  \item Level A
+  \item Level B
+  \item Level C
+  % No \item here - the nested chiasm becomes D.a, D.b, etc.
+  \begin{chiasm}
+    \item Nested first (becomes D.a)
+    \item Nested second (becomes D.b)
+    \item Nested third (becomes D.c)
+    \chiasmreturn
+    \item Nested third returns
+    \item Nested second returns
+    \item Nested first returns
+  \end{chiasm}
+  % Notice: C' comes next, D' is skipped
+  \chiasmreturn
+  \item Level C returns
+  \item Level B returns
+  \item Level A returns
+\end{chiasm}
+
+\section*{Multiple Nested Levels}
+
+A structure with multiple nesting levels:
+
+\begin{chiasm}
+  \item Top level A
+  \item Top level B
+    \begin{chiasm}
+      \item Second level a (B.a)
+      \item Second level b (B.b)
+        \begin{chiasm}
+          \item Third level i (B.b.i)
+          \item Third level ii (B.b.ii)
+          \chiasmreturn
+          \item Third level ii returns
+          \item Third level i returns
+        \end{chiasm}
+      \chiasmreturn
+      \item Second level b returns
+      \item Second level a returns
+    \end{chiasm}
+  \chiasmreturn
+  \item Top level B returns
+  \item Top level A returns
+\end{chiasm}
+
+\section*{Literary Example: Psalm-like Structure}
+
+A chiastic structure common in Hebrew poetry:
+
+\begin{chiasm}
+  \item Blessed is the man
+  \item who walks not in the counsel of the wicked,
+  \item nor stands in the way of sinners,
+  \item nor sits in the seat of scoffers;
+  \chiasmpivot
+  \item but his delight is in the law of the LORD,
+  \chiasmreturn
+  \item and on his law he meditates day and night.
+  \item He is like a tree planted by streams of water
+  \item that yields its fruit in its season,
+  \item and its leaf does not wither.
+\end{chiasm}
+
+\section*{Historical Narrative Example}
+
+A chiastic structure in narrative form:
+
+\begin{chiasm}
+  \item The people gathered in the city
+  \item The king proclaimed a new law
+  \item The elders assembled to discuss
+  \item The prophet spoke words of warning
+    \begin{chiasm}
+      \item ``Hear, O people,
+      \item the word of the Lord:
+      \item Turn from your wicked ways
+      \chiasmreturn
+      \item and return to righteousness
+      \item before judgment comes
+      \item upon this generation.''
+    \end{chiasm}
+  \chiasmreturn
+  \item The people considered the prophet's words
+  \item The elders debated late into the night
+  \item The king issued a decree of repentance
+  \item The people rejoiced and returned home
+\end{chiasm}
+
+\end{document}

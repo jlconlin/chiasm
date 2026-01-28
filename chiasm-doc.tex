@@ -1,0 +1,327 @@
+\documentclass{article}
+\usepackage{chiasm}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{listings}
+
+% Code listing style
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+
+\title{The \texttt{chiasm} Package\\
+       \large Typesetting Chiastic Literary Structures in \LaTeX}
+\author{Jeremy Lloyd Conlin\thanks{This package was developed in collaboration with AI tools.}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+The \texttt{chiasm} package provides a specialized environment for typesetting chiastic structures in \LaTeX. A chiasmus (plural: chiasmi) is a literary device where concepts or phrases are presented in a sequence and then repeated in reverse order, creating a mirror or symmetric structure. This pattern is common in ancient literature, rhetoric, and religious texts.
+
+\subsection{Features}
+
+\begin{itemize}
+\item Automatic labeling (A, B, C, ..., C', B', A')
+\item Progressive "staircase" indentation
+\item Support for nested chiastic structures with prefixed labels (e.g., B.a, B.b)
+\item Replacement nesting that automatically skips intermediate labels
+\item Pivot markers for center elements without prime partners
+\item Customizable indentation step size
+\end{itemize}
+
+\section{Basic Usage}
+
+\subsection{Simple Chiasm}
+
+The most basic chiasm has items that descend and then ascend:
+
+\begin{lstlisting}
+\begin{chiasm}
+  \item First concept
+  \item Second concept
+  \chiasmreturn
+  \item Second returns
+  \item First returns
+\end{chiasm}
+\end{lstlisting}
+
+\noindent This produces:
+
+\begin{chiasm}
+  \item First concept
+  \item Second concept
+  \chiasmreturn
+  \item Second returns
+  \item First returns
+\end{chiasm}
+
+\subsection{The \texttt{\textbackslash chiasmreturn} Command}
+
+The \verb|\chiasmreturn| command marks the transition from the descending phase to the ascending phase. After this command:
+\begin{itemize}
+\item Labels gain a prime mark (')
+\item Labels appear in reverse order
+\item Indentation reverses to match the descending phase
+\end{itemize}
+
+\section{Extended Example}
+
+Here's a more complex chiasm showing progressive indentation:
+
+\begin{lstlisting}
+\begin{chiasm}
+  \item Outermost concept
+  \item Second level
+  \item Third level
+  \item Fourth level (deepest)
+  \chiasmreturn
+  \item Fourth returns
+  \item Third returns
+  \item Second returns
+  \item Outermost returns
+\end{chiasm}
+\end{lstlisting}
+
+\noindent Result:
+
+\begin{chiasm}
+  \item Outermost concept
+  \item Second level
+  \item Third level
+  \item Fourth level (deepest)
+  \chiasmreturn
+  \item Fourth returns
+  \item Third returns
+  \item Second returns
+  \item Outermost returns
+\end{chiasm}
+
+\section{Nested Chiasms}
+
+\subsection{Regular Nesting}
+
+You can nest chiasms within items. Nested labels are automatically prefixed with the parent label:
+
+\begin{lstlisting}
+\begin{chiasm}
+  \item Outer A
+  \item Outer B
+    \begin{chiasm}
+      \item Inner a (labeled B.a)
+      \item Inner b (labeled B.b)
+      \chiasmreturn
+      \item Inner b' returns
+      \item Inner a' returns
+    \end{chiasm}
+  \chiasmreturn
+  \item Outer B' returns
+  \item Outer A' returns
+\end{chiasm}
+\end{lstlisting}
+
+\noindent Result:
+
+\begin{chiasm}
+  \item Outer A
+  \item Outer B
+    \begin{chiasm}
+      \item Inner a (labeled B.a)
+      \item Inner b (labeled B.b)
+      \chiasmreturn
+      \item Inner b' returns
+      \item Inner a' returns
+    \end{chiasm}
+  \chiasmreturn
+  \item Outer B' returns
+  \item Outer A' returns
+\end{chiasm}
+
+\subsection{Replacement Nesting}
+
+A special feature allows you to start a nested chiasm \emph{without} an \verb|\item| before it. This automatically creates the next label level and prefixes nested items accordingly, while skipping that label on the return:
+
+\begin{lstlisting}
+\begin{chiasm}
+  \item A level
+  \item B level
+  \item C level
+  % No \item here - nested chiasm "becomes" D
+  \begin{chiasm}
+    \item Nested a (labeled D.a)
+    \item Nested b (labeled D.b)
+    \chiasmreturn
+    \item Nested b' returns
+    \item Nested a' returns
+  \end{chiasm}
+  \chiasmreturn
+  \item C' returns (D' is skipped)
+  \item B' returns
+  \item A' returns
+\end{chiasm}
+\end{lstlisting}
+
+\noindent Result:
+
+\begin{chiasm}
+  \item A level
+  \item B level
+  \item C level
+  \begin{chiasm}
+    \item Nested a (labeled D.a)
+    \item Nested b (labeled D.b)
+    \chiasmreturn
+    \item Nested b' returns
+    \item Nested a' returns
+  \end{chiasm}
+  \chiasmreturn
+  \item C' returns (D' is skipped)
+  \item B' returns
+  \item A' returns
+\end{chiasm}
+
+\section{Pivot Elements}
+
+Sometimes a chiasm has a center element that serves as a pivot point without a corresponding prime element. Use \verb|\chiasmpivot| before the center item:
+
+\begin{lstlisting}
+\begin{chiasm}
+  \item First element
+  \item Second element
+  \chiasmpivot
+  \item CENTER PIVOT (no prime partner)
+  \chiasmreturn
+  \item Second returns
+  \item First returns
+\end{chiasm}
+\end{lstlisting}
+
+\noindent Result:
+
+\begin{chiasm}
+  \item First element
+  \item Second element
+  \chiasmpivot
+  \item CENTER PIVOT (no prime partner)
+  \chiasmreturn
+  \item Second returns
+  \item First returns
+\end{chiasm}
+
+\section{Package Options}
+
+Load the package with optional arguments to customize indentation:
+
+\begin{lstlisting}
+\usepackage[smallindent]{chiasm}  % 0.8em per level
+\usepackage{chiasm}               % 1.2em per level (default)
+\usepackage[largeindent]{chiasm}  % 1.6em per level
+\end{lstlisting}
+
+\section{Real-World Example}
+
+Here's an example from the Book of Helaman, showing a complex nested chiasm:
+
+\begin{lstlisting}
+\begin{chiasm}
+  \item And behold, there was peace in all the land,
+  \item insomuch that the Nephites did go into whatsoever 
+        part of the land they would...
+  \item And it came to pass that they became exceedingly 
+        rich, both the Lamanites and the Nephites;
+  \item and they did have an exceeding plenty of gold...
+    \begin{chiasm}
+      \item Now the land south
+      \item was called Lehi,
+      \item and the land north
+      \item was called Mulek,
+      \item which was after the son of Zedekiah;
+      \chiasmreturn
+      \item for the Lord
+      \item did bring Mulek
+      \item into the land north,
+      \item and Lehi
+      \item into the land south.
+    \end{chiasm}
+  \chiasmreturn
+  \item And behold, there was all manner of gold...
+  \item and thus they did become rich.
+  \item They did raise grain in abundance...
+  \item And thus the sixty and fourth year did pass away 
+        in peace.
+\end{chiasm}
+\end{lstlisting}
+
+\newpage
+\noindent Result:
+
+\begin{chiasm}
+  \item And behold, there was peace in all the land,
+  \item insomuch that the Nephites did go into whatsoever part of the land they would, whether among the Nephites or the Lamanites.
+  \item And it came to pass that they became exceedingly rich, both the Lamanites and the Nephites;
+  \item and they did have an exceeding plenty of gold, and of silver, and of all manner of precious metals, both in the land south and in the land north.
+    \begin{chiasm}
+      \item Now the land south
+      \item was called Lehi,
+      \item and the land north
+      \item was called Mulek,
+      \item which was after the son of Zedekiah;
+      \chiasmreturn
+      \item for the Lord
+      \item did bring Mulek
+      \item into the land north,
+      \item and Lehi
+      \item into the land south.
+    \end{chiasm}
+  \chiasmreturn
+  \item And behold, there was all manner of gold in both these lands, and of silver, and of precious ore of every kind;
+  \item and thus they did become rich.
+  \item They did raise grain in abundance, both in the north and in the south; and they did flourish exceedingly.
+  \item And thus the sixty and fourth year did pass away in peace.
+\end{chiasm}
+
+\section{Label Formatting}
+
+Labels are formatted according to depth:
+\begin{itemize}
+\item Depth 1: Uppercase letters (A, B, C, ...)
+\item Depth 2: Lowercase letters (a, b, c, ...)
+\item Depth 3: Roman numerals (i, ii, iii, ...)
+\item Depth 4+: Arabic numerals (1, 2, 3, ...)
+\end{itemize}
+
+Prime marks (') are added to labels on the ascending (return) phase.
+
+\section{Technical Details}
+
+\subsection{Implementation}
+
+The package uses:
+\begin{itemize}
+\item \texttt{enumitem} for the underlying list structure
+\item \texttt{xparse} for robust command definitions
+\item Depth-specific counters (chiasmi, chiasmii, chiasmiii, etc.)
+\item Dynamic indentation calculations based on position in the chiasm
+\end{itemize}
+
+\subsection{Limitations}
+
+\begin{itemize}
+\item Maximum nesting depth is 10 levels (can be extended if needed)
+\item Labels beyond 26 items at depth 1 or 2 will overflow alphabetic sequences
+\item Complex paragraph formatting within items may require manual adjustment
+\end{itemize}
+
+\section{License}
+
+This package is distributed under the \LaTeX\ Project Public License v1.3c or later.
+
+\end{document}

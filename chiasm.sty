@@ -1,0 +1,318 @@
+% chiasm.sty
+% A LaTeX package for typesetting chiastic structures
+% 
+% This package provides the 'chiasm' environment for creating chiastic 
+% (mirror/symmetric) literary structures with automatic labeling and 
+% progressive indentation.
+%
+% Author: [Your Name]
+% Version: 1.0
+% Date: 2025-01-27
+% License: LaTeX Project Public License v1.3c or later
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{chiasm}[2025/01/27 v1.0 Chiastic structure typesetting]
+
+% =================================================
+% Required Packages
+% =================================================
+\RequirePackage{enumitem}
+\RequirePackage{xparse}
+
+% =================================================
+% Package Options
+% =================================================
+\newdimen\chiasm@stepsize
+\chiasm@stepsize=1.2em  % Default indentation step
+
+\DeclareOption{smallindent}{\chiasm@stepsize=0.8em}
+\DeclareOption{largeindent}{\chiasm@stepsize=1.6em}
+
+\ProcessOptions\relax
+
+% =================================================
+% Counters (depth-specific)
+% =================================================
+\newcounter{chiasmdepth}
+\newcounter{chiasmi}
+\newcounter{chiasmii}
+\newcounter{chiasmiii}
+\newcounter{chiasmiv}
+\newcounter{chiasmv}
+
+% How many "replacement nests" happened at each depth (to skip on return)
+\newcounter{chiasmskipi}
+\newcounter{chiasmskipii}
+\newcounter{chiasmskipiii}
+\newcounter{chiasmskipiv}
+\newcounter{chiasmskipv}
+
+% =================================================
+% enumitem list configuration
+% =================================================
+\newlist{chiasmlist}{enumerate}{10}
+\setlist[chiasmlist]{
+  labelwidth=2em,      % space for the label (A:, B:, etc.)
+  labelsep=0.5em,      % space between label and text
+  leftmargin=0pt,      % auto-calculate based on labelwidth + labelsep
+  itemindent=0pt,      % will be set per-item for staircase
+  align=left,
+  nosep,
+  listparindent=0pt,
+  parsep=\parskip,
+  label={}
+}
+
+\makeatletter
+
+% =================================================
+% Internal dimensions and settings
+% =================================================
+\newdimen\chiasm@step
+\chiasm@step=\chiasm@stepsize
+
+% Top-level left margin (distance from page margin to first label)
+\newif\ifchiasm@forward
+\newif\ifchiasm@nextpivot
+\newif\ifchiasm@haspivot
+\newdimen\chiasm@toplevelindent
+\chiasm@toplevelindent=\dimexpr\labelindent+\labelwidth+\labelsep\relax
+
+% Current state variables
+\def\chiasm@currentbase{}    % Current base label (e.g., "B" for B.a, B.b)
+\def\chiasm@prefix{}         % Prefix for nested labels (e.g., "B.")
+\def\chiasm@ctrname{chiasmi} % Name of current depth counter
+\def\chiasm@skipctrname{chiasmskipi} % Name of current skip counter
+
+\def\chiasm@max{0}           % Maximum counter value before return
+\def\chiasm@ret{0}           % Current counter value on return leg
+
+% Indentation tracking
+\newdimen\chiasm@indent
+\newdimen\chiasm@baseindent
+\chiasm@baseindent=\chiasm@toplevelindent
+\newdimen\chiasm@baseleftmargin
+\newdimen\chiasm@currentindent  % Track the current item's total indent
+
+% For replacement nesting: the base label being replaced
+\def\chiasm@replbase{}
+
+% =================================================
+% Label formatter by depth: 1→A, 2→a, 3→i, 4→1
+% =================================================
+\newcommand{\chiasm@fmt}[1]{%
+  \ifcase\value{chiasmdepth}\relax
+  \or \Alph{#1}%        % Depth 1: A, B, C, ...
+  \or \alph{#1}%        % Depth 2: a, b, c, ...
+  \or \roman{#1}%       % Depth 3: i, ii, iii, ...
+  \or \arabic{#1}%      % Depth 4+: 1, 2, 3, ...
+  \else \arabic{#1}%
+  \fi
+}
+
+% =================================================
+% Compute local staircase indent = (index-1) × step
+% Uses robust TeX arithmetic to avoid fragility
+% =================================================
+\def\chiasm@setlocalindent{%
+  \ifchiasm@forward
+    \count@=\value{\chiasm@ctrname}%
+  \else
+    \count@=\chiasm@ret
+  \fi
+  \advance\count@ by -1 %
+  \chiasm@indent=\chiasm@step
+  \multiply\chiasm@indent by \count@ %
+}
+
+% =================================================
+% User Commands
+% =================================================
+
+% \chiasmreturn - Switch from descending to ascending mode
+% After this command, items will be labeled with primes (A', B', C')
+% and will appear in reverse order
+\NewDocumentCommand{\chiasmreturn}{}{%
+  \edef\chiasm@max{\arabic{\chiasm@ctrname}}%
+  % Subtract any replacement-nested slots so we skip labels (e.g., D') on return
+  \count@=\value{\chiasm@skipctrname}%
+  \ifchiasm@haspivot
+    % If there was a pivot, start one step back
+    \edef\chiasm@ret{\number\numexpr\chiasm@max-1-\count@\relax}%
+  \else
+    \edef\chiasm@ret{\number\numexpr\chiasm@max-\count@\relax}%
+  \fi
+  \chiasm@forwardfalse
+}
+
+% \chiasmpivot - Mark the next item as a pivot (center point)
+% A pivot item has no prime partner on the return leg
+% Use this before an \item that represents the center/turning point
+\NewDocumentCommand{\chiasmpivot}{}{%
+  \chiasm@nextpivottrue
+}
+
+% =================================================
+% Internal item commands
+% =================================================
+
+% Automatic item (standard behavior)
+\NewDocumentCommand{\chiasm@autoitem}{}{%
+  \ifchiasm@forward
+    % DESCENDING: increment counter, build label without prime
+    \stepcounter{\chiasm@ctrname}%
+    \ifchiasm@nextpivot
+      \chiasm@haspivottrue
+      \chiasm@nextpivotfalse
+    \fi
+    \edef\chiasm@lab{\chiasm@prefix\chiasm@fmt{\chiasm@ctrname}}%
+    \edef\chiasm@currentbase{\chiasm@lab}%
+  \else
+    % ASCENDING: use return counter, build label with prime
+    \setcounter{\chiasm@ctrname}{\chiasm@ret}%
+    \edef\chiasm@lab{\chiasm@prefix\chiasm@fmt{\chiasm@ctrname}'}%
+    \edef\chiasm@currentbase{\chiasm@prefix\chiasm@fmt{\chiasm@ctrname}}%
+  \fi
+  
+  % Calculate indentation and print the item
+  \chiasm@setlocalindent
+  \chiasm@origitem[\textbf{\chiasm@lab:}]%
+  
+  % Set absolute left indentation for the paragraph
+  \leftskip=\dimexpr\chiasm@baseindent+\chiasm@indent\relax
+  \@totalleftmargin=\dimexpr\chiasm@baseleftmargin+\chiasm@baseindent+\chiasm@indent\relax
+  \linewidth=\dimexpr\textwidth-\@totalleftmargin\relax
+  
+  % Save this indent for nested chiasms to use as their base
+  \global\chiasm@currentindent=\leftskip
+  
+  % Decrement return counter if on return leg
+  \ifchiasm@forward\else
+    \edef\chiasm@ret{\number\numexpr\chiasm@ret-1\relax}%
+  \fi
+}
+
+% Manual item with custom label (for special cases)
+\NewDocumentCommand{\chiasm@manualitem}{m}{%
+  \ifchiasm@forward
+    \stepcounter{\chiasm@ctrname}%
+  \else
+    \edef\chiasm@ret{\number\numexpr\chiasm@ret-1\relax}%
+  \fi
+  \setlength{\itemindent}{\chiasm@baseindent}%
+  \chiasm@origitem[\textbf{#1}]%
+}
+
+% =================================================
+% Main Environment
+% =================================================
+
+\NewDocumentEnvironment{chiasm}{}{%
+  % --- REPLACEMENT NESTING DETECTION ---
+  % If we're already inside a chiasm (depth>0) and the user starts a nested
+  % chiasm not under an \item, treat it as the next outer label (e.g., D)
+  % and prefix nested labels as D.a, D.b, ... while skipping D' on return.
+  \def\chiasm@replbase{}%
+  \ifnum\value{chiasmdepth}>0\relax
+    % Get parent counter names
+    \edef\chiasm@parentctr{chiasm\roman{chiasmdepth}}%
+    \edef\chiasm@parentskip{chiasmskip\roman{chiasmdepth}}%
+    % Only meaningful on the forward leg of the parent
+    \ifchiasm@forward
+      \stepcounter{\chiasm@parentctr}%
+      \stepcounter{\chiasm@parentskip}%
+      % Base label for prefixing nested items (e.g., D)
+      \edef\chiasm@replbase{\chiasm@prefix\chiasm@fmt{\chiasm@parentctr}}%
+    \fi
+  \fi
+
+  \begingroup
+    % Reset paragraph formatting to prevent inheritance from parent items
+    \par
+    \leftskip=0pt\relax
+    \rightskip=0pt\relax
+    \parindent=0pt\relax
+    \@totalleftmargin=0pt\relax
+    \linewidth=\textwidth\relax
+
+    % Initialize depth-specific counters
+    \stepcounter{chiasmdepth}%
+    \edef\chiasm@ctrname{chiasm\roman{chiasmdepth}}%
+    \edef\chiasm@skipctrname{chiasmskip\roman{chiasmdepth}}%
+    \setcounter{\chiasm@ctrname}{0}%
+    \setcounter{\chiasm@skipctrname}{0}%
+    
+    % Initialize state flags
+    \chiasm@forwardtrue
+    \chiasm@nextpivotfalse
+    \chiasm@haspivotfalse
+    \def\chiasm@max{0}%
+    \def\chiasm@ret{0}%
+
+    % Set base indentation:
+    % - Top-level: use toplevelindent
+    % - Nested: start from parent's current indent + one step
+    \ifnum\value{chiasmdepth}=1\relax
+      \chiasm@baseindent=\chiasm@toplevelindent
+    \else
+      \chiasm@baseindent=\dimexpr\chiasm@currentindent+\chiasm@step\relax
+    \fi
+
+    % Set label prefixing:
+    % - Replacement nest: use the inferred base (e.g., D.)
+    % - Regular nest: use currentbase (e.g., B.)
+    \def\chiasm@prefix{}%
+    \ifx\chiasm@replbase\empty\relax
+      \ifx\chiasm@currentbase\empty\else
+        \edef\chiasm@prefix{\chiasm@currentbase.}%
+      \fi
+    \else
+      \edef\chiasm@prefix{\chiasm@replbase.}%
+      \edef\chiasm@currentbase{\chiasm@replbase}%
+    \fi
+
+    % Start the enumeration list
+    \ifnum\value{chiasmdepth}=1\relax
+      \begin{chiasmlist}[labelindent=\chiasm@toplevelindent]
+    \else
+      \begin{chiasmlist}[labelindent=0pt]
+    \fi
+
+      % Save the base leftmargin for this list
+      \chiasm@baseleftmargin=\leftmargin
+      
+      % Save the underlying item command to avoid recursion
+      \@ifundefined{enit@item}{%
+        \let\chiasm@origitem\@item
+      }{%
+        \let\chiasm@origitem\enit@item
+      }%
+
+      % Override \item to use our custom implementation
+      \def\item{%
+        \@ifnextchar[{\chiasm@manualitem}{\chiasm@autoitem}%
+      }%
+}{%
+  % End of chiasm environment
+  \end{chiasmlist}
+  \addtocounter{chiasmdepth}{-1}%
+
+  % Reset paragraph formatting to prevent leakage
+  \par
+  \leftskip=0pt\relax
+  \rightskip=0pt\relax
+  \parindent=0pt\relax
+  \@totalleftmargin=0pt\relax
+  \linewidth=\textwidth\relax
+
+  % Reset indent baseline when returning to top level
+  \ifnum\value{chiasmdepth}=0\relax
+    \global\chiasm@currentindent=0pt\relax
+  \fi
+
+  \endgroup
+}
+
+\makeatother
+
+\endinput

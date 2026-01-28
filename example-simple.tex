@@ -1,0 +1,77 @@
+% example-simple.tex
+% Basic examples of using the chiasm package
+
+\documentclass{article}
+\usepackage{chiasm}
+\usepackage[margin=1in]{geometry}
+
+\title{Simple Chiasm Examples}
+\author{Jeremy Lloyd Conlin}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Example 1: Basic Chiasm}
+
+A simple two-level chiasm:
+
+\begin{chiasm}
+  \item The beginning
+  \item The middle
+  \chiasmreturn
+  \item The middle returns
+  \item The ending
+\end{chiasm}
+
+\section*{Example 2: Four Levels}
+
+A deeper structure:
+
+\begin{chiasm}
+  \item First outer concept
+  \item Second level concept
+  \item Third level concept
+  \item Fourth level (deepest)
+  \chiasmreturn
+  \item Fourth returns
+  \item Third returns
+  \item Second returns
+  \item First outer returns
+\end{chiasm}
+
+\section*{Example 3: With Pivot}
+
+A chiasm with a center pivot element:
+
+\begin{chiasm}
+  \item Introduction
+  \item Development
+  \chiasmpivot
+  \item CENTRAL THEME (no return)
+  \chiasmreturn
+  \item Development returns
+  \item Conclusion
+\end{chiasm}
+
+\section*{Example 4: Nested Structure}
+
+A chiasm containing another chiasm:
+
+\begin{chiasm}
+  \item Outer A
+  \item Outer B with nested content:
+    \begin{chiasm}
+      \item Inner first
+      \item Inner second
+      \chiasmreturn
+      \item Inner second returns
+      \item Inner first returns
+    \end{chiasm}
+  \chiasmreturn
+  \item Outer B returns
+  \item Outer A returns
+\end{chiasm}
+
+\end{document}
