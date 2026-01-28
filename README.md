@@ -114,7 +114,7 @@ LaTeX Project Public License v1.3c or later
 
 ## Author
 
-@jlconlin
+Jeremy Lloyd Conlin ([@jlconlin](https://github.com/jlconlin)) in collaboration with AI tools. My (La)TeX skills are not good enough to do this on my own, but I needed this capability.
 
 ## Contributing
 
@@ -123,5 +123,3 @@ Bug reports and feature requests are welcome!
 ## Acknowledgments
 
 Based on collaborative development exploring LaTeX techniques for typesetting complex literary structures.
-
-I (@jlconlin) used AI heavily to develop this package. My (La)TeX skills are not good enough to do this on my own, but I needed this capability.
