@@ -5,13 +5,13 @@
 % (mirror/symmetric) literary structures with automatic labeling and 
 % progressive indentation.
 %
-% Author: [Your Name]
-% Version: 1.0
-% Date: 2025-01-27
+% Author: Jeremy Lloyd Conlin
+% Version: 1.0.1
+% Date: 2025-02-03
 % License: LaTeX Project Public License v1.3c or later
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{chiasm}[2025/01/27 v1.0 Chiastic structure typesetting]
+\ProvidesPackage{chiasm}[2025/02/03 v1.0.1 Chiastic structure typesetting]
 
 % =================================================
 % Required Packages
@@ -220,6 +220,18 @@
       \stepcounter{\chiasm@parentskip}%
       % Base label for prefixing nested items (e.g., D)
       \edef\chiasm@replbase{\chiasm@prefix\chiasm@fmt{\chiasm@parentctr}}%
+      % If this is the first item in the parent chiasm, we need to create
+      % a phantom item to avoid "missing \item" error and set up indentation
+      \ifnum\value{\chiasm@parentctr}=1\relax
+        % Calculate proper indentation for this phantom item
+        \chiasm@setlocalindent
+        \chiasm@origitem[\relax]% Create invisible item
+        % Set up indentation context for the nested chiasm
+        \leftskip=\dimexpr\chiasm@baseindent+\chiasm@indent\relax
+        \@totalleftmargin=\dimexpr\chiasm@baseleftmargin+\chiasm@baseindent+\chiasm@indent\relax
+        \linewidth=\dimexpr\textwidth-\@totalleftmargin\relax
+        \global\chiasm@currentindent=\leftskip
+      \fi
     \fi
   \fi
 
@@ -249,10 +261,40 @@
     % Set base indentation:
     % - Top-level: use toplevelindent
     % - Nested: start from parent's current indent + one step
+    %   EXCEPT for replacement nesting where parent is at position 1 (first item)
+    %   In that case, don't add the extra step since items should align with parent
     \ifnum\value{chiasmdepth}=1\relax
       \chiasm@baseindent=\chiasm@toplevelindent
     \else
-      \chiasm@baseindent=\dimexpr\chiasm@currentindent+\chiasm@step\relax
+      % Check if this is a replacement nest as first item
+      % Note: chiasmdepth has already been incremented, so parent is (depth-1)
+      \count@=\value{chiasmdepth}%
+      \advance\count@ by -1\relax
+      \ifnum\count@=1\relax
+        \edef\chiasm@parentctr{chiasmi}%
+      \else\ifnum\count@=2\relax
+        \edef\chiasm@parentctr{chiasmii}%
+      \else\ifnum\count@=3\relax
+        \edef\chiasm@parentctr{chiasmiii}%
+      \else\ifnum\count@=4\relax
+        \edef\chiasm@parentctr{chiasmiv}%
+      \else
+        \edef\chiasm@parentctr{chiasmv}%
+      \fi\fi\fi\fi
+      
+      \ifx\chiasm@replbase\empty\relax
+        % Regular nesting: add a step
+        \chiasm@baseindent=\dimexpr\chiasm@currentindent+\chiasm@step\relax
+      \else
+        % Replacement nesting: check parent position
+        \ifnum\value{\chiasm@parentctr}=1\relax
+          % First item replacement: use parent's base without adding step
+          \chiasm@baseindent=\chiasm@currentindent
+        \else
+          % Later replacement: add a step as normal
+          \chiasm@baseindent=\dimexpr\chiasm@currentindent+\chiasm@step\relax
+        \fi
+      \fi
     \fi
 
     % Set label prefixing:
